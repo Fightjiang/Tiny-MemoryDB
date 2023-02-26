@@ -15,7 +15,7 @@
 #include "byte_array.h"
 #include "skiplist.h"
 #include "memory_pool.h"
-
+#include "hufman_code.h"
 
 namespace table { 
 
@@ -62,11 +62,12 @@ private :
     const std::string &_file_name ; 
     const Options& _options ;  
     SkipList *_skiplist ; 
+    HuffmanTree *_HufTree ; 
 }; 
  
 Table::Table(const Options& option , const std::string &filename) : 
     _is_closed(true) , _file_name(filename) , _options(option) , 
-    _skiplist(nullptr) { } // skiplist create when first put or open a existed file
+    _skiplist(nullptr) , _HufTree(nullptr) { } // skiplist create when first put or open a existed file
 
 Table::~Table(){
     this->close() ; 
@@ -80,15 +81,9 @@ Status Table::open() {
 
     struct stat info ; 
     bool table_exist = stat(this->_file_name.data() , &info) == 0 ;
-    
-    if(table_exist && this->_options.error_if_exists) { 
-        return Status::io_error(this->_file_name + " exists and error_if_exists is true");
-    }
 
-    if(!table_exist){
-        if(!this->_options.create_if_missing) {
-            return Status::io_error(this->_file_name + " does not exist") ; 
-        }
+    if(!table_exist && !this->_options.create_if_missing){
+        return Status::io_error(this->_file_name + " does not exist") ; 
     }
     
     auto close_func = [](int* fd) {
@@ -104,7 +99,7 @@ Status Table::open() {
     }
     table_exist = stat(this->_file_name.data() , &info) == 0 ;
     if(table_exist && this->_options.error_if_exists) { 
-        return Status::io_error(this->_file_name + " exists and error_if_exists is true");
+        return Status::io_error(this->_file_name + " open file error");
     }
      
     // if (info.st_size > _options.max_file_size) {
@@ -116,8 +111,17 @@ Status Table::open() {
     if(this->_skiplist == nullptr) {
         this->_skiplist = new SkipList() ; 
     }
+    // new HuffmanTree 
+    if(this->_HufTree == nullptr) {
+        this->_HufTree = new HuffmanTree() ; 
+    }
 
-    if (info.st_size > 0) {
+    if (info.st_size > 0) {// read data
+        // std::cout<<info.st_size<<std::endl ;
+        if(this->_HufTree->decrypt_File(std::string(this->_file_name + TARGETCODE_FILE_EXT).data()) == false) {
+            return Status::io_error(this->_file_name + TARGETCODE_FILE_EXT + " open huffman code file error");
+        } 
+
         auto munmap_func = [&info](char *data){
             if(data != MAP_FAILED){
                 munmap(data , info.st_size) ; 
@@ -136,27 +140,25 @@ Status Table::open() {
         // +-----------------------------------------------+
         off_t offset = 0 ; 
         while(true) {
-            ByteArray key ; 
-            ByteArray value ; 
+            std::string key_str , value_str ; 
 
             if(info.st_size - offset >= static_cast<off_t>(sizeof(uint8_t))) { // 判断是否还有 key-value 
-                uint8_t  key_size = *reinterpret_cast<uint8_t*>(data.get() + offset) ; // 读取 length of key 
-                key.assign(data.get() + offset + sizeof(uint8_t) , key_size) ; 
-                offset += sizeof(uint8_t) + key_size ; 
-
-                uint8_t value_size = *reinterpret_cast<uint8_t*>(data.get() + offset) ;
-                value.assign(data.get() + offset + sizeof(uint8_t) , value_size) ; 
-                offset += sizeof(uint8_t) + value_size ;
+                uint16_t key_size = *reinterpret_cast<uint8_t*>(data.get() + offset++) ; // 读取 length of key bits 
+                key_str = this->_HufTree->read_string(data , offset , key_size) ; 
+                offset = offset + key_size ; 
+                uint8_t value_size = *reinterpret_cast<uint8_t*>(data.get() + offset++) ;
+                value_str = this->_HufTree->read_string(data , offset , value_size) ; 
+                offset = offset + value_size ;
             }
-
-            if(key.empty()) {
+            if(key_str.size() == 0) {
                 break ; 
             }
-
-            auto result = this->_skiplist->insert(key , value) ; 
+            //std::cout<<key_str<<" "<<value_str<<std::endl ; 
+            auto result = this->_skiplist->insert(key_str , value_str) ; 
             if(result.good() == false){
                 return Status::invalid_operation(
-                    "insert fail , maybe duplicate key " + std::string(key.data(), key.size())) ;
+                    "insert fail , maybe duplicate key = " + key_str + "value = " + value_str
+                ) ;
             }
         }
     }
@@ -176,14 +178,32 @@ Status Table::close() {
         }
     }
     delete this->_skiplist ; this->_skiplist = nullptr ; 
+    delete this->_HufTree ; this->_HufTree = nullptr ; 
     this->_is_closed = true ; 
     return Status::ok() ; 
 }
 
 Status Table::dump() {
-    
+     
     if(this->_is_closed){
         return Status::invalid_operation("Table is closed");
+    }
+     
+    for(auto iter = this->_skiplist->begin() ;  iter.good() ; iter.next() ) {
+
+        if(this->_HufTree->insert_word(iter.key()) == false ){
+            return Status::invalid_operation("Huffman Tree insert key word fail " + *iter.key().data()) ;
+        }  
+        if(this->_HufTree->insert_word(iter.value()) == false) {
+            return Status::invalid_operation("Huffman Tree insert value word fail" + *iter.value().data()) ;
+        }
+    }
+     
+    if(this->_HufTree->build_huffmanTree() == false) {
+        return Status::invalid_operation("build Huffman Tree") ;
+    }
+    if(this->_HufTree->save_encryptedFile(std::string(this->_file_name + TARGETCODE_FILE_EXT).data()) == false) {
+        return Status::invalid_operation("save Huffman Tree Code fail") ;
     }
 
     auto close_func = [](int *fd) {
@@ -192,32 +212,20 @@ Status Table::dump() {
             delete fd ; 
         }
     } ; 
-
-
-    off_t bytes = 0 ;  
     std::shared_ptr<int> fd(new int(::open(this->_file_name.data(), O_WRONLY | O_CREAT | O_TRUNC, 0666)), close_func);
-
+    if (*fd == -1) {
+        return Status::io_error("open " + std::string(this->_file_name.data()) + " error, " + strerror(errno));
+    }
     for(auto iter = this->_skiplist->begin() ; iter.good() ; iter.next() ) {
-        uint8_t entry_size = iter.key().size() + iter.value().size() + sizeof(uint8_t) * 2 ; 
         // +--------------------Entry----------------------+
         // | length of key | key | length of value | value |
         // +-----------------------------------------------+
-        std::shared_ptr<char> buffer(new char[entry_size]);
-        uint8_t offset = 0;
-        uint8_t size = iter.key().size();
-        memcpy(buffer.get() + offset, &size, sizeof(size));
-        offset += sizeof(size);
-        memcpy(buffer.get() + offset, iter.key().data(), size);
-        offset += size;
-        size = iter.value().size();
-        memcpy(buffer.get() + offset, &size, sizeof(size));
-        offset += sizeof(size);
-        memcpy(buffer.get() + offset, iter.value().data(), size);
-
-        if (write(*fd, buffer.get(), entry_size) == -1) {
+        if(this->_HufTree->write_string(fd , iter.key()) == false)
             return Status::io_error("write " + std::string(this->_file_name.data()) + " error, " + strerror(errno));
-        }
-        bytes += entry_size;
+        
+        if(this->_HufTree->write_string(fd , iter.value()) == false)
+            return Status::io_error("write " + std::string(this->_file_name.data()) + " error, " + strerror(errno));
+        
     }
     return Status::ok();
 }

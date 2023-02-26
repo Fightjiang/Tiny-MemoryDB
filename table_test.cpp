@@ -228,6 +228,48 @@ int main() {
 
     // check dump table and load table 
     LOAD_AND_DUMP() ; 
+
+    // Options options ; 
+    // options.create_if_missing = true ; 
+    // options.dump_when_close = true ; 
+    // options.max_file_size = 4096 ; 
+
+    // vector<string> keys(10) , values(10);
+    // for(int i = 0 ; i < 10 ; ++i){
+    //     keys[i] = random_string(16) ; 
+    //     values[i] = random_string(16) ; 
+    // }
     
+    // string table_name = DEFAULT_NAME ; 
+    // // put keys 
+    // {
+    //     Table table(options , table_name) ; 
+    //     Status s = table.open() ; 
+    //     my_assert(s.good() == true, s) ; 
+    //     for(size_t i = 0 ; i < keys.size() ; ++i) {
+             
+    //         s = table.put(keys[i] , values[i]) ; 
+    //         my_assert(s.good(), s) ; 
+    //     }
+
+    //     for(size_t i = 0 ; i < keys.size() ; ++i) {
+             
+    //         s = table.del(keys[i]) ; 
+    //         my_assert(s.good() == true, s) ; 
+    //     } 
+    //     s = table.close() ; 
+    //     my_assert(s.good() == true, s) ;         
+    // }
+    // {
+    //     Table table(options , table_name) ; 
+    //     Status s = table.open() ; 
+    //     my_assert(s.good() == true, s) ; 
+    //     for(size_t i = 0 ; i < keys.size() ; ++i){
+    //         string value ;
+    //         s = table.get(keys[i] , &value) ; 
+    //         cout<<keys[i]<<" "<<value<<endl ;
+    //         my_assert(s.good() == false, s) ; 
+    //     }
+    // }
     return 0 ; 
 }

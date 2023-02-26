@@ -23,6 +23,7 @@ public:
     bool operator != (const ByteArray &other) const ; 
     bool operator < (const ByteArray &other) const ; 
     bool operator > (const ByteArray &other) const ; 
+    char operator [] (const uint8_t &index) const; 
     friend std::ostream & operator << (std::ostream &cout , const ByteArray &A) ; 
 
 private:
@@ -30,7 +31,7 @@ private:
     const char *_data;
 };
 
-// 都是浅拷贝？？？
+// 都是浅拷贝 
 ByteArray::ByteArray() : _size(0) , _data(nullptr) { }
 ByteArray::ByteArray(const char *data , const uint8_t &size) : _size(size) , _data(data) { }
 ByteArray::ByteArray(const char *str) : _size(strlen(str)) , _data(str) { }
@@ -111,8 +112,12 @@ bool ByteArray::operator > (const ByteArray &other) const {
     }
 }
 
+char ByteArray::operator [] (const uint8_t &index) const{
+    if(index < this->_size) return this->data()[index] ; 
+}
+
 std::ostream & operator << (std::ostream &out , const ByteArray &other){
-    out<<other.data() ;
+    out<<std::string(other.data() , other.size()) ;
     return out ; 
 }
 

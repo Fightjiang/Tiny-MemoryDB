@@ -6,8 +6,7 @@
 * Key 和 value 是任意字节的数组，自己实现的 byte_array 类，改进 C 语言中使用 char* 实现字符串的不足，如：'\0' 需要占一个字节且无法完整表示包含'\0'的数据，获得长度需要遍历字符串等。
 * 数据是按 Key 有序的存储在跳表中的。
 * 支持 CRUD 基本操作如：put(key , value) , get(key) , del(key) ; 
-* 支持数据持久化到磁盘上，但是不支持 `crash-safe 崩溃恢复` 
-* valgrind 内存泄漏检测安全
+* 支持数据持久化到磁盘上，但是不支持 `crash-safe 崩溃恢复`  
 
 
 ### 示例： 
@@ -62,11 +61,6 @@ if (!s.good()) {
     std::cerr << s.string() << std::endl;
 }
 ```
-
-
-
-
-
 
 
 ### TODO 优化
