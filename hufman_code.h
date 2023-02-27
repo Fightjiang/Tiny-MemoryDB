@@ -5,8 +5,9 @@
 // 前面的 len_key 和 len_value 改成压缩完所占用的字节数
 // 所以这个文件只需要做的是：
 // 1. 统计词频，建立 哈弗曼编码
-// 2. 根据 bits 查找对应的字符返回
-// 3. 根据字符返回对应的编码
+// 2. 根据 bits 查找对应的字符 
+// 3. 根据字符写入对应的编码 
+// 4. 保存/读取编码文件
 #include <string> 
 #include <iostream>
 #include <fstream>
@@ -28,11 +29,7 @@ public :
     bool insert_word(const ByteArray &word) ; 
     bool build_huffmanTree() ; 
     bool save_encryptedFile(const char *fileName) ; 
-    bool decrypt_File(const char *fileName) ; 
-    uint16_t get_huffman_code(const char ch) ; 
-    char get_char(const uint16_t code) ; 
-    bool judge_char_code_exist(const char ch) const ; 
-    bool judge_code_char_exist(const uint16_t code) const; 
+    bool decrypt_File(const char *fileName) ;  
     bool write_string(std::shared_ptr<int> &fd , const ByteArray &str) const ;
     std::string read_string(std::shared_ptr<char> &data , const off_t offset , const uint16_t len) const ; 
 private : 
@@ -145,27 +142,6 @@ bool HuffmanTree::decrypt_File(const char *fileName) {
     return true ; 
 }
 
-bool HuffmanTree::judge_char_code_exist(const char ch) const{
-    if(this->huffmanCodeTable.find(ch) != this->huffmanCodeTable.end()){
-        return true ; 
-    } 
-    return false ; 
-}
-
-bool HuffmanTree::judge_code_char_exist(const uint16_t code) const{
-    if(this->r_huffmanCodeTable.find(code) != this->r_huffmanCodeTable.end()){
-        return true ; 
-    } 
-    return false ; 
-}
-
-uint16_t HuffmanTree::get_huffman_code(const char ch) {
-    return this->huffmanCodeTable[ch] ;  
-}
-
-char HuffmanTree::get_char(const uint16_t code) {
-    return this->r_huffmanCodeTable[code] ;  
-}
 
 bool HuffmanTree::write_string(std::shared_ptr<int> &fd , const ByteArray &str) const {
     uint16_t len = 0 ;

@@ -21,36 +21,27 @@ namespace table {
 
 class Table {
 public : 
-    // Open the table with the specified "name" that in constructor.
-    // You should call Close() when it is no longer needed.
+    // 打开文件名为 filename 的文件  
     Table(const Options& option , const std::string &filename) ; 
     
     ~Table() ; 
 
-    // Returns OK on success.
+    // 打开文件
     Status open();
-
-    // Close the table.
-    // You should not do any operation after the table is closed.
-    // Returns OK on success.
+    
+    // 关闭文件
     Status close();
 
-    // Persist the entries to disk.
-    // Returns OK on success.
+    // 可持久化文件
     Status dump();
 
-    // Store the corresponding value in *value if the table contains an entry for "key".
-    // If value == nullptr, the corresponding value is not set.
-    // Returns OK on success.
+    // get key 
     Status get(const ByteArray& key, std::string* value);
 
-    // Set the table entry for "key" to "value".
-    // Returns OK on success.
+    // put "key" to "value".
     Status put(const ByteArray& key, const ByteArray& value);
 
-    // Remove the table entry (if any) for "key".
-    // It is an error if "key" did not exist in the table.
-    // Returns OK on success.
+    // delete key 如果 key 存在的话
     Status del(const ByteArray& key);
 
     // Non-copying
@@ -67,7 +58,7 @@ private :
  
 Table::Table(const Options& option , const std::string &filename) : 
     _is_closed(true) , _file_name(filename) , _options(option) , 
-    _skiplist(nullptr) , _HufTree(nullptr) { } // skiplist create when first put or open a existed file
+    _skiplist(nullptr) , _HufTree(nullptr) { } // 跳表 和 哈弗曼树的创建在成功 open 之后
 
 Table::~Table(){
     this->close() ; 

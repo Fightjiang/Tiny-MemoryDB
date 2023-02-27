@@ -36,7 +36,7 @@ ByteArray::ByteArray() : _size(0) , _data(nullptr) { }
 ByteArray::ByteArray(const char *data , const uint8_t &size) : _size(size) , _data(data) { }
 ByteArray::ByteArray(const char *str) : _size(strlen(str)) , _data(str) { }
 ByteArray::ByteArray(const std::string &str) : _size(str.size()) , _data(str.data()) { }
-// 而且不释放内存空间
+// 而且不释放内存空间，跳表删除时统一释放
 ByteArray::~ByteArray(){ }
 
 bool ByteArray::empty() const {

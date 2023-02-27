@@ -66,19 +66,12 @@ public :
         Iterator(Node *node) : _node(node) { }; 
         ~Iterator() { }; 
 
-        // Returns true if the iterator point to a valid node.
         bool good()                 { return this->_node != nullptr ; }
 
-        // Advances to the next position.
-        // REQUIRES: good()
         void next()                 { this->_node = this->_node->next[0] ; }
 
-        // Returns the key at the current position.
-        // REQUIRES: good()
         const ByteArray& key()      { return this->_node->key ; } 
 
-        // Returns the value at the current position.
-        // REQUIRES: good()
         const ByteArray& value()    { return this->_node->value ; }  
     };
 
@@ -86,23 +79,14 @@ public :
 
     ~SkipList() ; 
 
-    // Returns a iterator point to the first node.
     Iterator begin();
 
-    // Returns a iterator point to the new node.
-    // Returns a bad iterator if there is a duplicate key.
     Iterator insert(const ByteArray& key, const ByteArray& value);
 
-    // Return next iterator if have key
-    // Returns false if there is no such node.
     bool erase(const ByteArray& key);
     
-    // Returns a iterator point to the node with node.key == key.
-    // Returns a bad iterator if there is no such node.
     Iterator update(const ByteArray& key, const ByteArray& new_value);
     
-    // Returns a iterator point to the node with node.key == key.
-    // Returns a bad iterator if there is no such node.
     Iterator lookup(const ByteArray& key);
 
     // Non-copying
