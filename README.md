@@ -7,6 +7,7 @@
 * 数据是按 Key 有序的存储在跳表中的。
 * 支持 CRUD 基本操作如：put(key , value) , get(key) , del(key) ; 
 * 支持数据持久化到磁盘上，但是不支持 `crash-safe 崩溃恢复`  
+* 支持哈弗曼编码压缩，减少磁盘占用率，压缩效率大概在 30%-40%
 
 
 ### 示例： 
@@ -65,6 +66,13 @@ if (!s.good()) {
 
 ### TODO 优化
 
+- [-] 可以添加 Huffman 编码进行文件压缩，减少磁盘占用。
 - [ ] byte_array 结构体优化，设计不同的结构头，如内部表示字符长度可以是：uint16_t 、uint32_t、uint64_t 等，现在只是 uint8_t 一个，这样的话字符串的长度必须小于 2^8 。
 - [ ] 可以加布隆过滤器，加快判断 key 是否在内存里
-- [ ] 可以添加 Huffman 编码进行文件压缩，减少磁盘占用。
+
+
+### 参考代码库
+1. [使用C++开发，基于跳表实现的轻量级键值数据库](https://github.com/youngyangyang04/Skiplist-CPP)
+2. [Table is an in memory key-value store library](https://github.com/wonter/table)
+3. [leveldb_comment](https://github.com/TitenWang/leveldb-comment)
+4. [Huff_File](https://github.com/Fightjiang/Huff_File)

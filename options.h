@@ -21,6 +21,6 @@ struct Options {
 
 } ;  
 
-}// namespace leveldb
+}// namespace table
 
 #endif
